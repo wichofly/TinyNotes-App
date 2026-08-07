@@ -1,5 +1,9 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
 import { z } from 'zod';
+import { findRepositoryEnv } from './env-path.js';
+
+const environmentPath = findRepositoryEnv(process.cwd());
+config(environmentPath ? { path: environmentPath } : undefined);
 
 const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
