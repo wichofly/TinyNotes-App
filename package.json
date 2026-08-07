@@ -1,0 +1,36 @@
+{
+  "name": "tinynotes",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w @tinynotes/api\" \"npm run dev -w @tinynotes/web\"",
+    "dev:api": "npm run dev -w @tinynotes/api",
+    "dev:web": "npm run dev -w @tinynotes/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:migrate": "npm run db:migrate -w @tinynotes/api",
+    "db:studio": "npm run db:studio -w @tinynotes/api"
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "concurrently": "latest",
+    "eslint": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "globals": "latest",
+    "jsdom": "^29.0.0",
+    "prettier": "latest",
+    "typescript-eslint": "latest"
+  },
+  "engines": {
+    "node": ">=22.22.0"
+  }
+}

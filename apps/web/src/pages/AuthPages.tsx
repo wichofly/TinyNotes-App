@@ -1,0 +1,214 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { signInSchema, signUpSchema, type SignInInput, type SignUpInput } from '@tinynotes/shared';
+import { ArrowLeft, LoaderCircle } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { Brand } from '../components/Brand';
+import { authClient } from '../lib/auth-client';
+
+function AuthShell({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  children: ReactNode;
+}) {
+  return (
+    <main className="grid min-h-dvh bg-paper lg:grid-cols-[1fr_0.8fr]">
+      <section className="flex min-h-dvh flex-col px-5 py-6 sm:px-10 lg:px-16">
+        <div className="flex items-center justify-between">
+          <Brand />
+          <Link to="/" className="btn-ghost">
+            <ArrowLeft className="size-4" /> Home
+          </Link>
+        </div>
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-14">
+          <h1 className="font-serif text-4xl font-bold tracking-tight">{title}</h1>
+          <p className="mt-3 text-stone-600">{subtitle}</p>
+          {children}
+        </div>
+      </section>
+      <aside className="relative hidden overflow-hidden bg-stone-900 lg:block" aria-hidden="true">
+        <div className="absolute -right-28 -top-24 size-96 rounded-full bg-amber-300/90 blur-sm" />
+        <div className="absolute -bottom-32 -left-32 size-112 rounded-full border-[5rem] border-stone-700" />
+        <blockquote className="absolute bottom-20 left-14 right-14 font-serif text-3xl font-bold leading-tight text-stone-100">
+          “The palest ink is better than the best memory.”
+          <footer className="mt-4 font-sans text-sm font-normal text-stone-400">
+            — Chinese proverb
+          </footer>
+        </blockquote>
+      </aside>
+    </main>
+  );
+}
+
+function Field({
+  label,
+  error,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string | undefined }) {
+  const id = props.id ?? props.name;
+  return (
+    <div>
+      <label htmlFor={id} className="label">
+        {label}
+      </label>
+      <input
+        {...props}
+        id={id}
+        className="input"
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
+      />
+      {error ? (
+        <p id={`${id}-error`} className="mt-1.5 text-sm text-red-700" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function SignInPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [serverError, setServerError] = useState('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignInInput>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: { email: '', password: '' },
+  });
+  const from = (location.state as { from?: string } | null)?.from;
+  const destination = from?.startsWith('/') && !from.startsWith('//') ? from : '/notes';
+
+  async function submit(values: SignInInput) {
+    setServerError('');
+    const result = await authClient.signIn.email(values);
+    if (result.error) {
+      setServerError('Email or password is incorrect.');
+      return;
+    }
+    navigate(destination, { replace: true });
+  }
+
+  return (
+    <AuthShell title="Welcome back" subtitle="Sign in and pick up where you left off.">
+      <form onSubmit={handleSubmit(submit)} className="mt-9 space-y-5">
+        <Field
+          label="Email address"
+          type="email"
+          autoComplete="email"
+          {...register('email')}
+          error={errors.email?.message}
+        />
+        <Field
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          {...register('password')}
+          error={errors.password?.message}
+        />
+        {serverError ? (
+          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+            {serverError}
+          </p>
+        ) : null}
+        <button className="btn-primary w-full py-3" disabled={isSubmitting}>
+          {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : null}
+          {isSubmitting ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+      <p className="mt-6 text-center text-sm text-stone-500">
+        New to TinyNotes?{' '}
+        <Link
+          to="/sign-up"
+          className="font-semibold text-stone-900 underline decoration-amber-400 decoration-2 underline-offset-4"
+        >
+          Create an account
+        </Link>
+      </p>
+    </AuthShell>
+  );
+}
+
+export function SignUpPage() {
+  const navigate = useNavigate();
+  const [serverError, setServerError] = useState('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpInput>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: { name: '', email: '', password: '' },
+  });
+
+  async function submit(values: SignUpInput) {
+    setServerError('');
+    const result = await authClient.signUp.email(values);
+    if (result.error) {
+      setServerError('We could not create that account. The email may already be in use.');
+      return;
+    }
+    navigate('/notes', { replace: true });
+  }
+
+  return (
+    <AuthShell
+      title="Make space to think"
+      subtitle="Create your private notebook in a few seconds."
+    >
+      <form onSubmit={handleSubmit(submit)} className="mt-9 space-y-5">
+        <Field
+          label="Name"
+          type="text"
+          autoComplete="name"
+          {...register('name')}
+          error={errors.name?.message}
+        />
+        <Field
+          label="Email address"
+          type="email"
+          autoComplete="email"
+          {...register('email')}
+          error={errors.email?.message}
+        />
+        <Field
+          label="Password"
+          type="password"
+          autoComplete="new-password"
+          {...register('password')}
+          error={errors.password?.message}
+        />
+        <p className="text-xs leading-5 text-stone-500">
+          Use 8–128 characters. No arbitrary symbol or uppercase rules.
+        </p>
+        {serverError ? (
+          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+            {serverError}
+          </p>
+        ) : null}
+        <button className="btn-primary w-full py-3" disabled={isSubmitting}>
+          {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : null}
+          {isSubmitting ? 'Creating account…' : 'Create account'}
+        </button>
+      </form>
+      <p className="mt-6 text-center text-sm text-stone-500">
+        Already have an account?{' '}
+        <Link
+          to="/sign-in"
+          className="font-semibold text-stone-900 underline decoration-amber-400 decoration-2 underline-offset-4"
+        >
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
+  );
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@tinynotes/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --packages=external --alias:@tinynotes/shared=../../packages/shared/src/index.ts --outfile=dist/server.js",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:studio": "echo \"Drizzle Studio is not bundled; use a PostgreSQL client with DATABASE_URL.\""
+  },
+  "dependencies": {
+    "@tinynotes/shared": "*",
+    "better-auth": "latest",
+    "cors": "latest",
+    "dotenv": "latest",
+    "drizzle-orm": "latest",
+    "express": "latest",
+    "express-rate-limit": "latest",
+    "helmet": "latest",
+    "pg": "latest",
+    "pino": "latest",
+    "pino-http": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/cors": "latest",
+    "@types/express": "latest",
+    "@types/node": "latest",
+    "@types/pg": "latest",
+    "@types/supertest": "latest",
+    "esbuild": "0.28.1",
+    "supertest": "latest",
+    "tsx": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}
