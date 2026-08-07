@@ -136,6 +136,44 @@ MongoDB would work, but it offers no meaningful advantage for this data model. T
 
 SQLite would be the simplest local-only choice, but PostgreSQL is a better team and deployment default while still remaining straightforward.
 
+### 5.3 Better Auth PostgreSQL integration
+
+Better Auth must persist users, accounts, sessions, and verification records in the same PostgreSQL database as the application data. TinyNotes must connect Better Auth through its official Drizzle adapter rather than creating a second database client or implementing authentication persistence itself.
+
+The API owns one `node-postgres` pool configured from `DATABASE_URL`, creates the Drizzle client with the complete database schema, and passes that client and schema to Better Auth:
+
+```ts
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import pg from 'pg';
+import * as schema from './db/schema';
+
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const db = drizzle(pool, { schema });
+
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: 'pg',
+    schema,
+  }),
+});
+```
+
+The production implementation must also supply the authentication secret, base URL, trusted origins, email/password settings, and cookie policy specified elsewhere in this document. Credentials and connection URLs must come from validated environment configuration rather than source-code literals.
+
+#### Authentication schema and migrations
+
+- Better Auth defines the required authentication schema contract; TinyNotes declares the corresponding tables in Drizzle so authentication records and application foreign keys share one typed schema.
+- The Better Auth CLI supports PostgreSQL schema generation and migration. It may be used to generate or compare authentication schema changes when Better Auth is upgraded.
+- Reviewed, committed Drizzle SQL migrations are the source of truth for TinyNotes deployments. Generated changes must be reconciled with the Drizzle schema and committed under `apps/api/src/db/migrations`.
+- Application startup must not create or modify tables automatically. Run `npm run db:migrate` as an explicit deployment or local-setup step before starting the API.
+- The baseline uses PostgreSQL's `public` schema. A non-default schema requires an explicit design change, a configured `search_path`, creation and grants for that schema, regenerated migrations, and deployment verification.
+- Better Auth's experimental joins remain disabled unless profiling demonstrates a need and the associated schema and migration impact has been reviewed.
+
 ---
 
 ## 6. Technology Choices
@@ -317,7 +355,7 @@ A note must have a non-empty title. The body may be an empty TipTap document.
 
 ## 9. Data Model
 
-Better Auth will create and own its required authentication tables. The application must not duplicate password or session storage.
+Better Auth owns the authentication table contract and all password/session behavior. TinyNotes declares those tables in the shared Drizzle schema and creates them through committed migrations; application code must not duplicate or directly manage password or session storage.
 
 ### 9.1 `notes` table
 
