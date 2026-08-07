@@ -4,6 +4,22 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useBlocker, useNavigate } from 'react-router';
 import { RichTextEditor } from './RichTextEditor';
 
+function stableStringify(value: unknown): string {
+  function normalize(current: unknown): unknown {
+    if (Array.isArray(current)) return current.map(normalize);
+    if (current && typeof current === 'object') {
+      return Object.fromEntries(
+        Object.entries(current as Record<string, unknown>)
+          .sort(([left], [right]) => left.localeCompare(right))
+          .map(([key, nested]) => [key, normalize(nested)]),
+      );
+    }
+    return current;
+  }
+
+  return JSON.stringify(normalize(value));
+}
+
 export function EditorForm({
   initialTitle = '',
   initialContent = emptyRichTextDocument,
@@ -27,10 +43,10 @@ export function EditorForm({
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [baseline, setBaseline] = useState(() =>
-    JSON.stringify({ title: initialTitle, content: initialContent }),
+    stableStringify({ title: initialTitle, content: initialContent }),
   );
 
-  const current = useMemo(() => JSON.stringify({ title, content }), [title, content]);
+  const current = useMemo(() => stableStringify({ title, content }), [title, content]);
   const dirty = current !== baseline;
   const blocker = useBlocker(dirty && !saving);
 
@@ -54,9 +70,15 @@ export function EditorForm({
     event.preventDefault();
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
-    const destination = await onSave({ title: trimmedTitle, content });
+    let destination: string | void;
+    try {
+      destination = await onSave({ title: trimmedTitle, content });
+    } catch {
+      // The parent renders the request error. Keep the current draft dirty and editable.
+      return;
+    }
     setTitle(trimmedTitle);
-    setBaseline(JSON.stringify({ title: trimmedTitle, content }));
+    setBaseline(stableStringify({ title: trimmedTitle, content }));
     if (destination) queueMicrotask(() => navigate(destination, { replace: true }));
   }
 

@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.0
+          cache: npm
+
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Start isolated test database
+        run: npm run db:test:up
+      - run: npm run test:integration
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm run build
+
+      - name: Build production image
+        run: docker compose --profile production build app
+      - name: Start production database
+        run: docker compose up -d --wait postgres
+      - name: Apply production migrations
+        run: docker compose --profile production run --rm app npm run db:migrate:prod
+      - name: Start and smoke-test production image
+        run: |
+          docker compose --profile production up -d --wait app
+          npm run smoke:prod
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker compose --profile test --profile production logs
+      - name: Stop containers
+        if: always()
+        run: docker compose --profile test --profile production down -v

@@ -12,6 +12,8 @@ TinyNotes is an npm-workspaces TypeScript monorepo. `apps/web` contains the Reac
 - `npm run dev`: run the API on port 3000 and Vite on port 5173.
 - `npm run build`: build every applicable workspace into its `dist` directory.
 - `npm test`: run all Vitest unit and component tests once.
+- `npm run test:integration`: test API behavior against the isolated `tinynotes_test` database.
+- `npm run test:e2e`: run the two Playwright Chromium journeys.
 - `npm run typecheck`: run strict TypeScript checks across workspaces.
 - `npm run lint`: run ESLint with zero warnings allowed.
 - `npm run format:check`: verify Prettier formatting; use `npm run format` to fix it.
@@ -22,7 +24,7 @@ Use TypeScript ES modules and follow the existing two-space indentation. Prettie
 
 ## Testing Guidelines
 
-Use Vitest; web component tests use Testing Library and the setup in `apps/web/src/test/setup.ts`. Name tests `*.test.ts(x)` beside the code they cover. Add tests for validation boundaries, authorization-sensitive behavior, and user-visible state changes. No numeric coverage threshold is configured, but every behavior change should include focused regression coverage. Run `npm test`, `npm run typecheck`, and `npm run lint` before submitting.
+Use Vitest; web component tests use Testing Library and the setup in `apps/web/src/test/setup.ts`. Name tests `*.test.ts(x)` beside the code they cover. API integration tests use `*.integration.test.ts` and must only target `tinynotes_test`. Playwright journeys live in `e2e/`. Add tests for validation boundaries, authorization-sensitive behavior, and user-visible state changes. No numeric coverage threshold is configured, but every behavior change should include focused regression coverage. Run the relevant test layers plus `npm run typecheck` and `npm run lint` before submitting.
 
 ## Commit & Pull Request Guidelines
 

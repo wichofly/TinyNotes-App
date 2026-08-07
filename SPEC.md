@@ -1,6 +1,6 @@
 # TinyNotes — Technical Product Specification
 
-**Document status:** Ready for implementation  
+**Document status:** Implemented; stabilization in progress
 **Application type:** Demo full-stack web application  
 **Frontend:** React 19 + TypeScript + Vite  
 **Backend:** Node.js + Express + TypeScript  

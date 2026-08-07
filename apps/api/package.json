@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --packages=external --alias:@tinynotes/shared=../../packages/shared/src/index.ts --outfile=dist/server.js",
+    "build": "esbuild src/server.ts src/db/migrate.ts --bundle --platform=node --target=node22 --format=esm --packages=external --alias:@tinynotes/shared=../../packages/shared/src/index.ts --outdir=dist",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "e2e:server": "tsx src/test/e2e-server.ts",
     "lint": "tsc --noEmit",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate:prod": "node dist/db/migrate.js",
     "db:studio": "echo \"Drizzle Studio is not bundled; use a PostgreSQL client with DATABASE_URL.\""
   },
   "dependencies": {

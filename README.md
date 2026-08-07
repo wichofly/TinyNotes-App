@@ -52,16 +52,40 @@ Open `http://localhost:5173`. Vite proxies `/api` to the Express server at `http
 
 ## Commands
 
-| Command                | Purpose                                   |
-| ---------------------- | ----------------------------------------- |
-| `npm run dev`          | Run API and web development servers       |
-| `npm run build`        | Build both applications                   |
-| `npm run typecheck`    | Run strict TypeScript checks              |
-| `npm test`             | Run unit and component tests              |
-| `npm run lint`         | Run the repository's static checks        |
-| `npm run format:check` | Verify Prettier formatting                |
-| `npm run db:migrate`   | Apply pending migrations                  |
-| `npm run db:studio`    | Explain how to inspect the local database |
+| Command                    | Purpose                                   |
+| -------------------------- | ----------------------------------------- |
+| `npm run dev`              | Run API and web development servers       |
+| `npm run build`            | Build both applications                   |
+| `npm run typecheck`        | Run strict TypeScript checks              |
+| `npm test`                 | Run unit and component tests              |
+| `npm run test:integration` | Run API tests against isolated PostgreSQL |
+| `npm run test:e2e`         | Run the two Chromium browser journeys     |
+| `npm run lint`             | Run the repository's static checks        |
+| `npm run format:check`     | Verify Prettier formatting                |
+| `npm run db:migrate`       | Apply pending migrations                  |
+| `npm run db:migrate:prod`  | Apply migrations from a production build  |
+| `npm run smoke:prod`       | Check a running production container      |
+| `npm run db:studio`        | Explain how to inspect the local database |
+
+## Test suites
+
+Unit and component tests do not require PostgreSQL:
+
+```bash
+npm test
+```
+
+Integration and end-to-end tests use the disposable `tinynotes_test` database on port `5433`. The test harness refuses to run against any other database name.
+
+```bash
+npm run db:test:up
+npm run test:integration
+npx playwright install chromium
+npm run test:e2e
+npm run db:test:down
+```
+
+The Playwright suite starts the API and Vite automatically, resets the test database, and runs only Chromium. It covers authentication/CRUD and anonymous public-link revocation. Cross-user ownership attacks remain in the faster API integration suite.
 
 ## Environment variables
 
@@ -84,6 +108,22 @@ Database migrations are committed SQL managed by Drizzle ORM's migrator. Add rev
 ## Production
 
 `npm run build` creates the API bundle in `apps/api/dist` and the SPA in `apps/web/dist`. When `NODE_ENV=production`, Express serves the compiled SPA and API from one origin. Use HTTPS, keep `TRUST_PROXY` disabled unless the deployment has a trusted reverse proxy, and run migrations before starting the new release.
+
+The multi-stage `Dockerfile` packages both artifacts. To exercise the production image locally:
+
+```bash
+docker compose up -d --wait postgres
+docker compose --profile production build app
+docker compose --profile production run --rm app npm run db:migrate:prod
+docker compose --profile production up -d --wait app
+npm run smoke:prod
+```
+
+If port `5432` is already in use, set `POSTGRES_PORT` to a free host port before these Docker Compose commands. Container-to-container database traffic continues to use port `5432`.
+
+Migration is intentionally separate from application startup so a deployment can run it once before rolling out multiple application instances. Replace every example credential and URL in real environments. Terminate HTTPS at a trusted proxy, set `TRUST_PROXY=true` only when that proxy is correctly configured, and use the exact public origin for `BETTER_AUTH_URL`, `WEB_ORIGIN`, and `PUBLIC_APP_URL`.
+
+The CI workflow runs formatting, linting, type checking, all three test layers, the production build, an image build, explicit migration, and container smoke checks. The repository remains provider-neutral; adapt the same image and migration command to the chosen platform.
 
 Public-note responses and SPA routes send `X-Robots-Tag: noindex, nofollow, noarchive`. This reduces accidental indexing but does not turn public links into authenticated resources; anyone possessing an enabled link can read its note.
 
