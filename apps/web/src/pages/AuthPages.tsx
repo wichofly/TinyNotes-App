@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import { signInSchema, signUpSchema, type SignInInput, type SignUpInput } from '@tinynotes/shared';
 import { ArrowLeft, LoaderCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { Brand } from '../components/Brand';
@@ -76,26 +76,29 @@ function Field({
 export function SignInPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [serverError, setServerError] = useState('');
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
     defaultValues: { email: '', password: '' },
   });
+  const signInMutation = useMutation({
+    mutationFn: (values: SignInInput) => authClient.signIn.email(values),
+  });
   const from = (location.state as { from?: string } | null)?.from;
   const destination = from?.startsWith('/') && !from.startsWith('//') ? from : '/notes';
+  const hasServerError = Boolean(signInMutation.data?.error) || signInMutation.isError;
 
   async function submit(values: SignInInput) {
-    setServerError('');
-    const result = await authClient.signIn.email(values);
-    if (result.error) {
-      setServerError('Email or password is incorrect.');
-      return;
+    try {
+      const result = await signInMutation.mutateAsync(values);
+      if (result.error) return;
+      navigate(destination, { replace: true });
+    } catch {
+      // TanStack Query exposes the request error through signInMutation.isError.
     }
-    navigate(destination, { replace: true });
   }
 
   return (
@@ -115,14 +118,14 @@ export function SignInPage() {
           {...register('password')}
           error={errors.password?.message}
         />
-        {serverError ? (
+        {hasServerError ? (
           <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
-            {serverError}
+            Email or password is incorrect.
           </p>
         ) : null}
-        <button className="btn-primary w-full py-3" disabled={isSubmitting}>
-          {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : null}
-          {isSubmitting ? 'Signing in…' : 'Sign in'}
+        <button className="btn-primary w-full py-3" disabled={signInMutation.isPending}>
+          {signInMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
+          {signInMutation.isPending ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-stone-500">
@@ -140,24 +143,27 @@ export function SignInPage() {
 
 export function SignUpPage() {
   const navigate = useNavigate();
-  const [serverError, setServerError] = useState('');
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
     defaultValues: { name: '', email: '', password: '' },
   });
+  const signUpMutation = useMutation({
+    mutationFn: (values: SignUpInput) => authClient.signUp.email(values),
+  });
+  const hasServerError = Boolean(signUpMutation.data?.error) || signUpMutation.isError;
 
   async function submit(values: SignUpInput) {
-    setServerError('');
-    const result = await authClient.signUp.email(values);
-    if (result.error) {
-      setServerError('We could not create that account. The email may already be in use.');
-      return;
+    try {
+      const result = await signUpMutation.mutateAsync(values);
+      if (result.error) return;
+      navigate('/notes', { replace: true });
+    } catch {
+      // TanStack Query exposes the request error through signUpMutation.isError.
     }
-    navigate('/notes', { replace: true });
   }
 
   return (
@@ -190,14 +196,14 @@ export function SignUpPage() {
         <p className="text-xs leading-5 text-stone-500">
           Use 8–128 characters. No arbitrary symbol or uppercase rules.
         </p>
-        {serverError ? (
+        {hasServerError ? (
           <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
-            {serverError}
+            We could not create that account. The email may already be in use.
           </p>
         ) : null}
-        <button className="btn-primary w-full py-3" disabled={isSubmitting}>
-          {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : null}
-          {isSubmitting ? 'Creating account…' : 'Create account'}
+        <button className="btn-primary w-full py-3" disabled={signUpMutation.isPending}>
+          {signUpMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
+          {signUpMutation.isPending ? 'Creating account…' : 'Create account'}
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-stone-500">

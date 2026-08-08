@@ -23,8 +23,15 @@ export function ConfirmDialog({
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
+    const isOpen = dialog.hasAttribute('open');
+    if (open && !isOpen) {
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+    }
+    if (!open && isOpen) {
+      if (typeof dialog.close === 'function') dialog.close();
+      else dialog.removeAttribute('open');
+    }
   }, [open]);
 
   return (

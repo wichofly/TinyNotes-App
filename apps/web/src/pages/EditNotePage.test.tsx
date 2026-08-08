@@ -50,6 +50,8 @@ function renderPage() {
 describe('EditNotePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true });
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
     vi.mocked(api.getNote).mockResolvedValue({ note: privateNote });
   });
 
@@ -88,6 +90,20 @@ describe('EditNotePage', () => {
     expect(screen.getByDisplayValue(shareUrl)).toHaveAttribute('readonly');
   });
 
+  it('falls back when the Clipboard API is unavailable', async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    const shareUrl = 'http://127.0.0.1:5173/s/abcdefghijklmnopqrstuvwxyzABCDEF';
+    vi.mocked(api.getNote).mockResolvedValue({
+      note: { ...privateNote, isPublic: true, shareUrl },
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Copy' }));
+
+    expect(await screen.findByText(/Could not copy/)).toBeInTheDocument();
+  });
+
   it('names the note in the destructive confirmation dialog', async () => {
     const user = userEvent.setup();
     renderPage();
@@ -99,5 +115,25 @@ describe('EditNotePage', () => {
     expect(dialog).toBeVisible();
     expect(within(dialog).getByRole('heading', { name: /A private thought/ })).toBeInTheDocument();
     expect(within(dialog).getByText(/cannot be undone/i)).toBeInTheDocument();
+  });
+
+  it('falls back when dialog methods are unavailable', async () => {
+    const user = userEvent.setup();
+    const { showModal, close } = HTMLDialogElement.prototype;
+    Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
+    Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
+
+    try {
+      renderPage();
+      await user.click(await screen.findByRole('button', { name: 'Delete note' }));
+
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toHaveAttribute('open');
+      await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+      expect(dialog).not.toHaveAttribute('open');
+    } finally {
+      HTMLDialogElement.prototype.showModal = showModal;
+      HTMLDialogElement.prototype.close = close;
+    }
   });
 });

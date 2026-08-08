@@ -57,8 +57,13 @@ export function EditNotePage() {
 
   async function copyLink(url: string) {
     setCopyStatus('');
+    const clipboard = navigator.clipboard;
+    if (!window.isSecureContext || typeof clipboard?.writeText !== 'function') {
+      setCopyStatus('Could not copy. Select and copy the URL instead.');
+      return;
+    }
     try {
-      await navigator.clipboard.writeText(url);
+      await clipboard.writeText(url);
       setCopyStatus('Link copied');
     } catch {
       setCopyStatus('Could not copy. Select and copy the URL instead.');

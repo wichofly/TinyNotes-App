@@ -1,0 +1,4 @@
+interface:
+  display_name: "Modern React Components"
+  short_description: "Build clean, accessible React components"
+  default_prompt: "Use $modern-best-practice-react-components to build or refactor a clean, accessible React component."
