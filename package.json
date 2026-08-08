@@ -12,7 +12,8 @@
     "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w @tinynotes/api\" \"npm run dev -w @tinynotes/web\"",
     "dev:api": "npm run dev -w @tinynotes/api",
     "dev:web": "npm run dev -w @tinynotes/web",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && npm run typecheck:e2e",
+    "typecheck:e2e": "tsc --noEmit -p tsconfig.e2e.json",
     "test": "npm run test --workspaces --if-present",
     "test:unit": "npm test",
     "test:integration": "npm run test:integration -w @tinynotes/api",
@@ -37,6 +38,7 @@
     "globals": "latest",
     "jsdom": "^29.0.0",
     "prettier": "latest",
+    "typescript": "latest",
     "typescript-eslint": "latest"
   },
   "engines": {

@@ -1,25 +1,28 @@
-import type {
-  ApiErrorResponse,
-  CreateNoteInput,
-  NoteListItem,
-  OwnedNote,
-  PublicNote,
-  UpdateNoteInput,
+import {
+  apiErrorSchema,
+  type ApiErrorCode,
+  type ApiErrorResponse,
+  type CreateNoteInput,
+  type NoteListItem,
+  type OwnedNote,
+  type PublicNote,
+  type UpdateNoteInput,
 } from '@tinynotes/shared';
 import { authClient } from './auth-client';
 
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
-    public readonly code: string,
+    public readonly code: ApiErrorCode,
     message: string,
     public readonly fields?: Record<string, string>,
   ) {
     super(message);
+    this.name = 'ApiError';
   }
 }
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+async function apiFetch<T>(path: string, init?: RequestInit) {
   const response = await fetch(path, {
     ...init,
     credentials: 'include',
@@ -32,7 +35,9 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     let payload: ApiErrorResponse | undefined;
     try {
-      payload = (await response.json()) as ApiErrorResponse;
+      const body: unknown = await response.json();
+      const parsed = apiErrorSchema.safeParse(body);
+      if (parsed.success) payload = parsed.data;
     } catch {
       // A proxy or network edge may return a non-JSON error.
     }

@@ -82,6 +82,7 @@ export function EditNotePage() {
   }
 
   const note = noteQuery.data.note;
+  const shareUrl = note.isPublic ? note.shareUrl : null;
   const shareBusy = shareMutation.isPending || unshareMutation.isPending;
   const mutationError =
     updateMutation.error instanceof ApiError
@@ -102,14 +103,14 @@ export function EditNotePage() {
             Public link
           </h2>
         </div>
-        {note.isPublic && note.shareUrl ? (
+        {shareUrl ? (
           <div className="mt-4">
             <label htmlFor="share-url" className="sr-only">
               Public share URL
             </label>
             <input
               id="share-url"
-              value={note.shareUrl}
+              value={shareUrl}
               readOnly
               className="input py-2 text-xs"
               onFocus={(event) => event.currentTarget.select()}
@@ -118,16 +119,11 @@ export function EditNotePage() {
               <button
                 type="button"
                 className="btn-secondary px-3"
-                onClick={() => void copyLink(note.shareUrl!)}
+                onClick={() => void copyLink(shareUrl)}
               >
                 <Copy className="size-3.5" /> Copy
               </button>
-              <a
-                href={note.shareUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-secondary px-3"
-              >
+              <a href={shareUrl} target="_blank" rel="noreferrer" className="btn-secondary px-3">
                 Open <ExternalLink className="size-3.5" />
               </a>
             </div>
