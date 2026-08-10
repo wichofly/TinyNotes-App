@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { signInSchema, signUpSchema, type SignInInput, type SignUpInput } from '@tinynotes/shared';
 import { ArrowLeft, LoaderCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -76,6 +76,7 @@ function Field({
 export function SignInPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const {
     register,
     handleSubmit,
@@ -95,6 +96,7 @@ export function SignInPage() {
     try {
       const result = await signInMutation.mutateAsync(values);
       if (result.error) return;
+      queryClient.clear();
       navigate(destination, { replace: true });
     } catch {
       // TanStack Query exposes the request error through signInMutation.isError.
@@ -143,6 +145,7 @@ export function SignInPage() {
 
 export function SignUpPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const {
     register,
     handleSubmit,
@@ -160,6 +163,7 @@ export function SignUpPage() {
     try {
       const result = await signUpMutation.mutateAsync(values);
       if (result.error) return;
+      queryClient.clear();
       navigate('/notes', { replace: true });
     } catch {
       // TanStack Query exposes the request error through signUpMutation.isError.

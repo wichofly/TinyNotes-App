@@ -33,7 +33,7 @@ export function NotesPage() {
       ) : query.isError ? (
         <ErrorState onRetry={() => void query.refetch()} />
       ) : query.data.notes.length === 0 ? (
-        <section className="rounded-[2rem] border border-dashed border-stone-300 bg-white/50 px-6 py-20 text-center">
+        <section className="rounded-4xl border border-dashed border-stone-300 bg-white/50 px-6 py-20 text-center">
           <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-100 text-amber-700">
             <FileText className="size-6" />
           </span>

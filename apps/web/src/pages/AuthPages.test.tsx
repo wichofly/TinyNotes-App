@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,13 +19,14 @@ vi.mock('../lib/auth-client', () => ({
 
 function renderSignInPage() {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
-  return render(
+  const view = render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
         <SignInPage />
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  return { client, ...view };
 }
 
 describe('SignInPage', () => {
@@ -53,5 +54,18 @@ describe('SignInPage', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Email or password is incorrect.');
+  });
+
+  it('clears cached private data after successful authentication', async () => {
+    const user = userEvent.setup();
+    authMocks.signInEmail.mockResolvedValue({ data: { user: {} }, error: null });
+    const { client } = renderSignInPage();
+    client.setQueryData(['notes'], { notes: [{ title: 'Another account note' }] });
+
+    await user.type(screen.getByLabelText('Email address'), 'reader@example.com');
+    await user.type(screen.getByLabelText('Password'), 'correct-length');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    await waitFor(() => expect(client.getQueryData(['notes'])).toBeUndefined());
   });
 });
