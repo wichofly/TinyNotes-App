@@ -4,6 +4,7 @@ import { createNoteSchema, emptyRichTextDocument, richTextDocumentSchema } from 
 describe('richTextDocumentSchema', () => {
   it('accepts the empty TipTap document', () => {
     expect(richTextDocumentSchema.safeParse(emptyRichTextDocument).success).toBe(true);
+    expect(richTextDocumentSchema.safeParse({ type: 'doc' }).success).toBe(true);
   });
 
   it('accepts supported formatting and safe links', () => {
@@ -45,6 +46,15 @@ describe('richTextDocumentSchema', () => {
     expect(
       richTextDocumentSchema.safeParse({ type: 'doc', content: [{ type: 'image' }] }).success,
     ).toBe(false);
+  });
+
+  it('rejects deeply nested malformed input without throwing', () => {
+    let deeplyNested: unknown = {};
+    for (let depth = 0; depth < 15_000; depth += 1) {
+      deeplyNested = { nested: deeplyNested };
+    }
+
+    expect(richTextDocumentSchema.safeParse(deeplyNested).success).toBe(false);
   });
 });
 

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OwnedNote, UpdateNoteInput } from '@tinynotes/shared';
 import { Copy, ExternalLink, Globe2, Link2Off, LoaderCircle, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { Navigate, useParams } from 'react-router';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EditorForm } from '../components/EditorForm';
 import { ErrorState } from '../components/ErrorState';
@@ -18,8 +18,8 @@ function timeOnly(value: string) {
 export function EditNotePage() {
   const { noteId = '' } = useParams();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleted, setDeleted] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
   const queryKey = ['notes', noteId] as const;
   const noteQuery = useQuery({ queryKey, queryFn: () => api.getNote(noteId) });
@@ -44,7 +44,7 @@ export function EditNotePage() {
     onSuccess: () => {
       queryClient.removeQueries({ queryKey });
       void queryClient.invalidateQueries({ queryKey: ['notes'] });
-      navigate('/notes', { replace: true });
+      setDeleted(true);
     },
   });
 
@@ -70,6 +70,7 @@ export function EditNotePage() {
     }
   }
 
+  if (deleted) return <Navigate to="/notes" replace />;
   if (noteQuery.isPending) return <LoadingScreen label="Opening your note…" />;
   if (noteQuery.isError) {
     const missing = noteQuery.error instanceof ApiError && noteQuery.error.status === 404;
@@ -204,7 +205,7 @@ export function EditNotePage() {
         key={note.updatedAt}
         initialTitle={note.title}
         initialContent={note.content}
-        saving={updateMutation.isPending}
+        saving={updateMutation.isPending || deleteMutation.isPending}
         savedAt={timeOnly(note.updatedAt)}
         error={mutationError}
         sidebar={sidebar}

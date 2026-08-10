@@ -197,10 +197,12 @@ function EditorToolbar({ editor }: { editor: Editor }) {
 export function RichTextEditor({
   content,
   onChange,
+  onValidityChange,
   disabled = false,
 }: {
   content: RichTextNode;
   onChange: (document: RichTextNode) => void;
+  onValidityChange?: (valid: boolean) => void;
   disabled?: boolean;
 }) {
   const editor = useEditor({
@@ -215,6 +217,7 @@ export function RichTextEditor({
     },
     onUpdate({ editor: currentEditor }) {
       const parsed = richTextDocumentSchema.safeParse(currentEditor.getJSON());
+      onValidityChange?.(parsed.success);
       if (parsed.success) onChange(parsed.data);
     },
   });

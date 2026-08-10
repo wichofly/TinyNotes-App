@@ -37,14 +37,19 @@ const privateNote = {
 
 function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const router = createMemoryRouter([{ path: '/notes/:noteId', element: <EditNotePage /> }], {
-    initialEntries: [`/notes/${privateNote.id}`],
-  });
-  return render(
+  const router = createMemoryRouter(
+    [
+      { path: '/notes/:noteId', element: <EditNotePage /> },
+      { path: '/notes', element: <div>Notes list</div> },
+    ],
+    { initialEntries: [`/notes/${privateNote.id}`] },
+  );
+  const view = render(
     <QueryClientProvider client={client}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
+  return { router, ...view };
 }
 
 describe('EditNotePage', () => {
@@ -135,5 +140,24 @@ describe('EditNotePage', () => {
       HTMLDialogElement.prototype.showModal = showModal;
       HTMLDialogElement.prototype.close = close;
     }
+  });
+
+  it('leaves without a second prompt after deleting a dirty note', async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    vi.mocked(api.deleteNote).mockResolvedValue(undefined);
+    const { router } = renderPage();
+
+    const title = await screen.findByLabelText('Note title');
+    await user.type(title, ' changed');
+    const deleteButtons = screen.getAllByRole('button', { name: 'Delete note' });
+    await user.click(deleteButtons[0]!);
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete note' }),
+    );
+
+    expect(await screen.findByText('Notes list')).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/notes');
+    expect(confirm).not.toHaveBeenCalled();
   });
 });

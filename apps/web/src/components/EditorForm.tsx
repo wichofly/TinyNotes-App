@@ -42,12 +42,13 @@ export function EditorForm({
   const navigate = useNavigate();
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
+  const [contentValid, setContentValid] = useState(true);
   const [baseline, setBaseline] = useState(() =>
     stableStringify({ title: initialTitle, content: initialContent }),
   );
 
   const current = useMemo(() => stableStringify({ title, content }), [title, content]);
-  const dirty = current !== baseline;
+  const dirty = current !== baseline || !contentValid;
   const blocker = useBlocker(dirty && !saving);
 
   useEffect(() => {
@@ -99,13 +100,24 @@ export function EditorForm({
             id="note-title"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
+            disabled={saving}
             maxLength={120}
             required
             autoFocus={!initialTitle}
             placeholder="Untitled note"
             className="mb-6 w-full border-0 bg-transparent font-serif text-4xl font-bold tracking-tight text-stone-900 placeholder:text-stone-300 focus:outline-none sm:text-5xl"
           />
-          <RichTextEditor content={content} onChange={setContent} disabled={saving} />
+          <RichTextEditor
+            content={content}
+            onChange={setContent}
+            onValidityChange={setContentValid}
+            disabled={saving}
+          />
+          {!contentValid ? (
+            <p className="mt-4 text-sm font-medium text-red-700" role="alert">
+              Note content exceeds the supported size or structure limits.
+            </p>
+          ) : null}
           {error ? (
             <p className="mt-4 text-sm font-medium text-red-700" role="alert">
               {error}
@@ -117,7 +129,7 @@ export function EditorForm({
             <button
               type="submit"
               className="btn-primary w-full"
-              disabled={saving || !dirty || !title.trim()}
+              disabled={saving || !dirty || !title.trim() || !contentValid}
             >
               {saving ? (
                 <LoaderCircle className="size-4 animate-spin" />

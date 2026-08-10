@@ -170,7 +170,7 @@ function validateNode(
   if (leafTypes.has(value.type)) return value.content === undefined;
   if (!containerTypes.has(value.type)) return false;
   if (value.content === undefined) {
-    return ['paragraph', 'heading', 'codeBlock'].includes(value.type);
+    return ['doc', 'paragraph', 'heading', 'codeBlock'].includes(value.type);
   }
   if (!Array.isArray(value.content)) return false;
   if (
@@ -185,9 +185,9 @@ function validateNode(
 }
 
 function isValidRichTextDocument(value: unknown): value is RichTextNode {
+  if (!validateNode(value, { nodes: 0, textCharacters: 0 }, 0)) return false;
   const serialized = JSON.stringify(value);
-  if (new TextEncoder().encode(serialized).byteLength > MAX_CONTENT_BYTES) return false;
-  return validateNode(value, { nodes: 0, textCharacters: 0 }, 0);
+  return new TextEncoder().encode(serialized).byteLength <= MAX_CONTENT_BYTES;
 }
 
 export const richTextDocumentSchema = z.custom<RichTextNode>(isValidRichTextDocument, {

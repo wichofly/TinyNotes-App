@@ -11,9 +11,11 @@ vi.mock('./RichTextEditor', async () => {
     RichTextEditor: ({
       content,
       onChange,
+      onValidityChange,
     }: {
       content: RichTextNode;
       onChange: (content: RichTextNode) => void;
+      onValidityChange?: (valid: boolean) => void;
     }) => {
       const initialized = React.useRef(false);
       React.useEffect(() => {
@@ -24,7 +26,13 @@ vi.mock('./RichTextEditor', async () => {
           ...(content.content === undefined ? {} : { content: content.content }),
         });
       }, [content, onChange]);
-      return <div aria-label="Note body" />;
+      return (
+        <div aria-label="Note body">
+          <button type="button" onClick={() => onValidityChange?.(false)}>
+            Exceed content limit
+          </button>
+        </div>
+      );
     },
   };
 });
@@ -73,5 +81,40 @@ describe('EditorForm', () => {
     expect(title).toHaveValue('Draft survives');
     expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save note' })).toBeEnabled();
+  });
+
+  it('prevents saving when the visible editor content is invalid', async () => {
+    const user = userEvent.setup();
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/',
+          element: <EditorForm initialTitle="Saved title" saving={false} onSave={vi.fn()} />,
+        },
+      ],
+      { initialEntries: ['/'] },
+    );
+    render(<RouterProvider router={router} />);
+
+    await user.click(screen.getByRole('button', { name: 'Exceed content limit' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('exceeds the supported size');
+    expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save note' })).toBeDisabled();
+  });
+
+  it('disables the title while saving', () => {
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/',
+          element: <EditorForm initialTitle="Saved title" saving onSave={vi.fn()} />,
+        },
+      ],
+      { initialEntries: ['/'] },
+    );
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getByLabelText('Note title')).toBeDisabled();
   });
 });
