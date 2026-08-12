@@ -24,7 +24,7 @@ TinyNotes is a deliberately small full-stack note-taking application. Users can 
    npm install
    ```
 
-2. Copy `.env.example` to `.env` and replace `BETTER_AUTH_SECRET` with a random value containing at least 32 characters. For example:
+2. Copy `.env.example` to `.env` and set `BETTER_AUTH_SECRET` to a random value containing at least 32 characters. For example:
 
    ```bash
    openssl rand -base64 32
@@ -109,7 +109,9 @@ Database migrations are committed SQL managed by Drizzle ORM's migrator. Add rev
 
 `npm run build` creates the API bundle in `apps/api/dist` and the SPA in `apps/web/dist`. When `NODE_ENV=production`, Express serves the compiled SPA and API from one origin. Use HTTPS, keep `TRUST_PROXY` disabled unless the deployment has a trusted reverse proxy, and run migrations before starting the new release.
 
-The multi-stage `Dockerfile` packages both artifacts. To exercise the production image locally:
+The multi-stage `Dockerfile` packages both artifacts. The Compose production profile reads
+`BETTER_AUTH_SECRET` from the environment or root `.env` file and refuses to start when it is
+missing or empty. To exercise the production image locally:
 
 ```bash
 docker compose up -d --wait postgres
@@ -121,7 +123,9 @@ npm run smoke:prod
 
 If port `5432` is already in use, set `POSTGRES_PORT` to a free host port before these Docker Compose commands. Container-to-container database traffic continues to use port `5432`.
 
-Migration is intentionally separate from application startup so a deployment can run it once before rolling out multiple application instances. Replace every example credential and URL in real environments. Terminate HTTPS at a trusted proxy, set `TRUST_PROXY=true` only when that proxy is correctly configured, and use the exact public origin for `BETTER_AUTH_URL`, `WEB_ORIGIN`, and `PUBLIC_APP_URL`.
+Migration is intentionally separate from application startup so a deployment can run it before replacing the application instance. TinyNotes currently uses in-memory rate limiters and therefore supports exactly one production API instance per database. The API holds a PostgreSQL advisory lock for its lifetime and fails fast if a second instance starts. Add a shared rate-limit store before enabling multiple replicas or overlapping rolling deployments.
+
+Supply `BETTER_AUTH_SECRET` through the deployment platform's secret manager and replace every example credential and URL in real environments. Terminate HTTPS at a trusted proxy, set `TRUST_PROXY=true` only when that proxy is correctly configured, and use the exact public origin for `BETTER_AUTH_URL`, `WEB_ORIGIN`, and `PUBLIC_APP_URL`.
 
 The CI workflow runs formatting, linting, type checking, all three test layers, the production build, an image build, explicit migration, and container smoke checks. The repository remains provider-neutral; adapt the same image and migration command to the chosen platform.
 
@@ -132,5 +136,6 @@ Public-note responses and SPA routes send `X-Robots-Tag: noindex, nofollow, noar
 - Note ownership is checked in every private database query.
 - TipTap JSON is the source of truth; arbitrary HTML is never stored or inserted.
 - Public tokens contain 192 bits of randomness and are deleted on revocation.
+- Production is intentionally limited to one API instance until rate limits use a shared store.
 - Editing uses explicit saves and last-write-wins semantics.
 - The initial list returns the 100 most recently updated notes. Pagination is intentionally deferred for this demo.

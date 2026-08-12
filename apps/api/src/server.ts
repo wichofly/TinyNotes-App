@@ -1,7 +1,9 @@
 import { createApp } from './app';
 import { env } from './config/env';
-import { closeDatabase } from './db/client';
+import { acquireProductionInstanceLock, closeDatabase } from './db/client';
 import { logger } from './lib/logger';
+
+await acquireProductionInstanceLock();
 
 const app = createApp();
 const server = app.listen(env.PORT, () => {

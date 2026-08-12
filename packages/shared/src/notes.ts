@@ -58,6 +58,7 @@ const allowedChildren: Record<string, Set<string>> = {
   codeBlock: new Set(['text']),
 };
 const safeLinkPattern = /^(https?:|mailto:)/i;
+const safeExternalLinkRelTokens = new Set(['noopener', 'noreferrer']);
 
 export type RichTextMark = {
   type: string;
@@ -76,6 +77,14 @@ function hasOnlyKeys(value: Record<string, unknown>, allowed: string[]) {
   return Object.keys(value).every((key) => allowed.includes(key));
 }
 
+function hasSafeLinkRel(value: unknown): boolean {
+  if (typeof value !== 'string' || value.length > 256) return false;
+  const tokens = new Set(value.toLowerCase().trim().split(/\s+/));
+  return (
+    !tokens.has('opener') && [...safeExternalLinkRelTokens].every((token) => tokens.has(token))
+  );
+}
+
 function validateMark(mark: unknown): mark is RichTextMark {
   if (!mark || typeof mark !== 'object' || Array.isArray(mark)) return false;
   const value = mark as Record<string, unknown>;
@@ -85,14 +94,22 @@ function validateMark(mark: unknown): mark is RichTextMark {
     if (!hasOnlyKeys(value, ['type', 'attrs'])) return false;
     if (!value.attrs || typeof value.attrs !== 'object' || Array.isArray(value.attrs)) return false;
     const attrs = value.attrs as Record<string, unknown>;
+    const opensNewTab = attrs.target === undefined || attrs.target === '_blank';
     return (
-      hasOnlyKeys(attrs, ['href', 'target', 'rel', 'class']) &&
+      hasOnlyKeys(attrs, ['href', 'target', 'rel', 'class', 'title']) &&
       typeof attrs.href === 'string' &&
       attrs.href.length <= 2_048 &&
       safeLinkPattern.test(attrs.href) &&
       (attrs.target === undefined || attrs.target === null || attrs.target === '_blank') &&
-      (attrs.rel === undefined || attrs.rel === null || typeof attrs.rel === 'string') &&
-      (attrs.class === undefined || attrs.class === null || typeof attrs.class === 'string')
+      (attrs.rel === undefined ||
+        (!opensNewTab && attrs.rel === null) ||
+        hasSafeLinkRel(attrs.rel)) &&
+      (attrs.class === undefined ||
+        attrs.class === null ||
+        (typeof attrs.class === 'string' && attrs.class.length <= 256)) &&
+      (attrs.title === undefined ||
+        attrs.title === null ||
+        (typeof attrs.title === 'string' && attrs.title.length <= 512))
     );
   }
 

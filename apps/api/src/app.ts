@@ -5,10 +5,11 @@ import cors from 'cors';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
-import pinoHttp from 'pino-http';
+import pinoHttp, { type StdSerializedResults } from 'pino-http';
 import { auth } from './auth/auth';
 import { env } from './config/env';
 import { logger } from './lib/logger';
+import { redactSensitiveRequestUrl } from './lib/request-log-redaction';
 import { errorHandler } from './middleware/error-handler';
 import { apiNotFound } from './middleware/not-found';
 import { notesRouter, publicNotesRouter } from './modules/notes/notes.routes';
@@ -55,9 +56,20 @@ export function createApp() {
       allowedHeaders: ['Content-Type'],
     }),
   );
-  app.use(pinoHttp({ logger }));
+  app.use(
+    pinoHttp({
+      logger,
+      serializers: {
+        req(request: StdSerializedResults['req']) {
+          return { ...request, url: redactSensitiveRequestUrl(request.url) };
+        },
+      },
+    }),
+  );
 
-  app.use(['/api/auth/sign-in/email', '/api/auth/sign-up/email'], authLimiter);
+  if (env.NODE_ENV === 'production') {
+    app.use(['/api/auth/sign-in/email', '/api/auth/sign-up/email'], authLimiter);
+  }
   app.all('/api/auth/*splat', toNodeHandler(auth));
 
   app.use('/api', apiLimiter);

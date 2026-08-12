@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { logger } from '../lib/logger';
+import { redactSensitiveRequestUrl } from '../lib/request-log-redaction';
 import { AppError } from './app-error';
 
 function zodFields(error: ZodError) {
@@ -36,7 +37,10 @@ export function errorHandler(error: unknown, req: Request, res: Response, _next:
     return;
   }
 
-  logger.error({ err: error, method: req.method, path: req.path }, 'Unhandled request error');
+  logger.error(
+    { err: error, method: req.method, path: redactSensitiveRequestUrl(req.path) },
+    'Unhandled request error',
+  );
   res.status(500).json({
     error: { code: 'INTERNAL_ERROR', message: 'Something went wrong.' },
   });

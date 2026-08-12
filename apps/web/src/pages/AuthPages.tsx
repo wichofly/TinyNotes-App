@@ -8,6 +8,52 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { Brand } from '../components/Brand';
 import { authClient } from '../lib/auth-client';
 
+type AuthOperation = 'sign-in' | 'sign-up';
+type AuthResponseError = {
+  code?: string | undefined;
+  status: number;
+};
+
+const duplicateAccountCodes = new Set([
+  'USER_ALREADY_EXISTS',
+  'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL',
+]);
+
+function authErrorMessage(
+  operation: AuthOperation,
+  responseError: AuthResponseError | null | undefined,
+  requestFailed: boolean,
+): string | undefined {
+  if (responseError?.status === 429) {
+    return 'Too many attempts from this device. Please wait a few minutes and try again.';
+  }
+
+  if (requestFailed || (responseError && responseError.status >= 500)) {
+    return 'The authentication service is unavailable. Check that the API and database are running, then try again.';
+  }
+
+  if (operation === 'sign-in' && responseError) {
+    if (responseError.status === 401 || responseError.code === 'INVALID_EMAIL_OR_PASSWORD') {
+      return 'Email or password is incorrect.';
+    }
+    return 'TinyNotes could not sign you in. Please try again.';
+  }
+
+  if (
+    operation === 'sign-up' &&
+    responseError?.code &&
+    duplicateAccountCodes.has(responseError.code)
+  ) {
+    return 'An account with this email already exists.';
+  }
+
+  if (operation === 'sign-up' && responseError) {
+    return 'TinyNotes could not create your account. Please try again.';
+  }
+
+  return undefined;
+}
+
 function AuthShell({
   title,
   subtitle,
@@ -90,7 +136,11 @@ export function SignInPage() {
   });
   const from = (location.state as { from?: string } | null)?.from;
   const destination = from?.startsWith('/') && !from.startsWith('//') ? from : '/notes';
-  const hasServerError = Boolean(signInMutation.data?.error) || signInMutation.isError;
+  const serverErrorMessage = authErrorMessage(
+    'sign-in',
+    signInMutation.data?.error,
+    signInMutation.isError,
+  );
 
   async function submit(values: SignInInput) {
     try {
@@ -120,9 +170,9 @@ export function SignInPage() {
           {...register('password')}
           error={errors.password?.message}
         />
-        {hasServerError ? (
+        {serverErrorMessage ? (
           <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
-            Email or password is incorrect.
+            {serverErrorMessage}
           </p>
         ) : null}
         <button className="btn-primary w-full py-3" disabled={signInMutation.isPending}>
@@ -157,7 +207,11 @@ export function SignUpPage() {
   const signUpMutation = useMutation({
     mutationFn: (values: SignUpInput) => authClient.signUp.email(values),
   });
-  const hasServerError = Boolean(signUpMutation.data?.error) || signUpMutation.isError;
+  const serverErrorMessage = authErrorMessage(
+    'sign-up',
+    signUpMutation.data?.error,
+    signUpMutation.isError,
+  );
 
   async function submit(values: SignUpInput) {
     try {
@@ -200,9 +254,9 @@ export function SignUpPage() {
         <p className="text-xs leading-5 text-stone-500">
           Use 8–128 characters. No arbitrary symbol or uppercase rules.
         </p>
-        {hasServerError ? (
+        {serverErrorMessage ? (
           <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
-            We could not create that account. The email may already be in use.
+            {serverErrorMessage}
           </p>
         ) : null}
         <button className="btn-primary w-full py-3" disabled={signUpMutation.isPending}>
