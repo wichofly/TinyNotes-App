@@ -41,13 +41,12 @@ export async function closeDatabase(): Promise<void> {
   const client = instanceLockClient;
   instanceLockClient = undefined;
 
-  if (client) {
-    try {
+  try {
+    if (client) {
       await client.query('SELECT pg_advisory_unlock($1, $2)', instanceLockKeys);
-    } finally {
-      client.release();
     }
+  } finally {
+    client?.release();
+    await pool.end();
   }
-
-  await pool.end();
 }

@@ -1,6 +1,6 @@
 import { emptyRichTextDocument, type RichTextNode } from '@tinynotes/shared';
 import { ArrowLeft, Check, LoaderCircle, Save } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useBlocker, useNavigate } from 'react-router';
 import { RichTextEditor } from './RichTextEditor';
 
@@ -46,10 +46,11 @@ export function EditorForm({
   const [baseline, setBaseline] = useState(() =>
     stableStringify({ title: initialTitle, content: initialContent }),
   );
+  const allowNavigation = useRef(false);
 
   const current = useMemo(() => stableStringify({ title, content }), [title, content]);
   const dirty = current !== baseline || !contentValid;
-  const blocker = useBlocker(dirty && !saving);
+  const blocker = useBlocker(() => dirty && !allowNavigation.current);
 
   useEffect(() => {
     if (blocker.state !== 'blocked') return;
@@ -59,13 +60,13 @@ export function EditorForm({
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (!dirty || saving) return;
+      if (!dirty || allowNavigation.current) return;
       event.preventDefault();
       event.returnValue = '';
     };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty, saving]);
+  }, [dirty]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -80,7 +81,10 @@ export function EditorForm({
     }
     setTitle(trimmedTitle);
     setBaseline(stableStringify({ title: trimmedTitle, content }));
-    if (destination) queueMicrotask(() => navigate(destination, { replace: true }));
+    if (destination) {
+      allowNavigation.current = true;
+      navigate(destination, { replace: true });
+    }
   }
 
   return (

@@ -5,7 +5,7 @@ import { Brand } from '../components/Brand';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { ReadOnlyContent } from '../components/RichTextEditor';
-import { api } from '../lib/api';
+import { ApiError, api } from '../lib/api';
 
 function PublicNoteMetadata() {
   return <meta name="robots" content="noindex, nofollow, noarchive" />;
@@ -25,15 +25,17 @@ export function PublicNotePage() {
         <LoadingScreen label="Opening shared note…" />
       </>
     );
-  if (query.isError)
+  if (query.isError) {
+    const missing = query.error instanceof ApiError && query.error.status === 404;
     return (
       <>
         <PublicNoteMetadata />
         <main className="grid min-h-dvh place-items-center bg-paper px-5">
           <div className="w-full max-w-lg">
             <ErrorState
-              title="Note not found"
-              message="This public link is invalid or has been disabled."
+              title={missing ? 'Note not found' : undefined}
+              message={missing ? 'This public link is invalid or has been disabled.' : undefined}
+              onRetry={missing ? undefined : () => void query.refetch()}
             />
             <p className="mt-6 text-center">
               <Link
@@ -47,6 +49,7 @@ export function PublicNotePage() {
         </main>
       </>
     );
+  }
 
   const note = query.data.note;
   return (

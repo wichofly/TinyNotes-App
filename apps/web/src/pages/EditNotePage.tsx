@@ -15,6 +15,8 @@ function timeOnly(value: string) {
   );
 }
 
+const notesListQueryKey = ['notes'] as const;
+
 export function EditNotePage() {
   const { noteId = '' } = useParams();
   const queryClient = useQueryClient();
@@ -28,7 +30,7 @@ export function EditNotePage() {
     mutationFn: (input: UpdateNoteInput) => api.updateNote(noteId, input),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKey, data);
-      void queryClient.invalidateQueries({ queryKey: ['notes'] });
+      void queryClient.invalidateQueries({ queryKey: notesListQueryKey, exact: true });
     },
   });
   const shareMutation = useMutation({
@@ -43,7 +45,7 @@ export function EditNotePage() {
     mutationFn: api.deleteNote,
     onSuccess: () => {
       queryClient.removeQueries({ queryKey });
-      void queryClient.invalidateQueries({ queryKey: ['notes'] });
+      void queryClient.invalidateQueries({ queryKey: notesListQueryKey, exact: true });
       setDeleted(true);
     },
   });
@@ -52,7 +54,7 @@ export function EditNotePage() {
     queryClient.setQueryData<{ note: OwnedNote }>(queryKey, (current) =>
       current ? { note: { ...current.note, isPublic, shareUrl } } : current,
     );
-    void queryClient.invalidateQueries({ queryKey: ['notes'] });
+    void queryClient.invalidateQueries({ queryKey: notesListQueryKey, exact: true });
   }
 
   async function copyLink(url: string) {
@@ -191,7 +193,10 @@ export function EditNotePage() {
         <button
           type="button"
           className="btn-danger mt-4 w-full"
-          onClick={() => setDeleteOpen(true)}
+          onClick={() => {
+            deleteMutation.reset();
+            setDeleteOpen(true);
+          }}
         >
           <Trash2 className="size-4" /> Delete note
         </button>
@@ -219,6 +224,13 @@ export function EditNotePage() {
         description="This note and any active public link will be permanently deleted. This action cannot be undone."
         confirmLabel="Delete note"
         busy={deleteMutation.isPending}
+        error={
+          deleteMutation.error instanceof ApiError
+            ? deleteMutation.error.message
+            : deleteMutation.isError
+              ? 'The note could not be deleted. Please try again.'
+              : undefined
+        }
         onClose={() => setDeleteOpen(false)}
         onConfirm={() => deleteMutation.mutate(noteId)}
       />

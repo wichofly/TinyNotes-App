@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { toNodeHandler } from 'better-auth/node';
+import { getRequest, setResponse } from 'better-call/node';
 import cors from 'cors';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
@@ -17,6 +17,28 @@ import { notesRouter, publicNotesRouter } from './modules/notes/notes.routes';
 const rateLimitResponse = {
   error: { code: 'RATE_LIMITED', message: 'Too many requests. Try again later.' },
 };
+const authBodyLimitBytes = 32 * 1024;
+
+async function handleAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const contentLength = Number(req.headers['content-length']);
+  if (Number.isFinite(contentLength) && contentLength > authBodyLimitBytes) {
+    res.status(413).json({
+      error: { code: 'VALIDATION_ERROR', message: 'The request body is too large.' },
+    });
+    return;
+  }
+
+  try {
+    const request = getRequest({
+      base: env.BETTER_AUTH_URL,
+      request: req,
+      bodySizeLimit: authBodyLimitBytes,
+    });
+    await setResponse(res, await auth.handler(request));
+  } catch (error) {
+    next(error);
+  }
+}
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1_000,
@@ -70,7 +92,7 @@ export function createApp() {
   if (env.NODE_ENV === 'production') {
     app.use(['/api/auth/sign-in/email', '/api/auth/sign-up/email'], authLimiter);
   }
-  app.all('/api/auth/*splat', toNodeHandler(auth));
+  app.all('/api/auth/*splat', handleAuth);
 
   app.use('/api', apiLimiter);
   app.use(express.json({ limit: '210kb', strict: true }));

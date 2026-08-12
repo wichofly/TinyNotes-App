@@ -1,7 +1,25 @@
-import { ArrowRight, Feather, Link2, LockKeyhole } from 'lucide-react';
+import { ArrowRight, Feather, Link2, LockKeyhole, type LucideIcon } from 'lucide-react';
 import { Link } from 'react-router';
 import { Brand } from '../components/Brand';
 import { authClient } from '../lib/auth-client';
+
+const features = [
+  {
+    Icon: Feather,
+    title: 'Just enough editor',
+    copy: 'Headings, lists, links, quotes, and code—without a wall of controls.',
+  },
+  {
+    Icon: LockKeyhole,
+    title: 'Private by default',
+    copy: 'Every note belongs to you. Nothing is public until you decide it should be.',
+  },
+  {
+    Icon: Link2,
+    title: 'Share, then revoke',
+    copy: 'Create a hard-to-guess public link and disable it instantly whenever you want.',
+  },
+] satisfies ReadonlyArray<{ Icon: LucideIcon; title: string; copy: string }>;
 
 export function LandingPage() {
   const { data: session } = authClient.useSession();
@@ -60,34 +78,15 @@ export function LandingPage() {
         </section>
         <section className="border-y border-stone-200/80 bg-white/55">
           <div className="mx-auto grid max-w-5xl gap-10 px-6 py-16 sm:grid-cols-3 sm:px-8">
-            {[
-              [
-                Feather,
-                'Just enough editor',
-                'Headings, lists, links, quotes, and code—without a wall of controls.',
-              ],
-              [
-                LockKeyhole,
-                'Private by default',
-                'Every note belongs to you. Nothing is public until you decide it should be.',
-              ],
-              [
-                Link2,
-                'Share, then revoke',
-                'Create a hard-to-guess public link and disable it instantly whenever you want.',
-              ],
-            ].map(([Icon, title, copy]) => {
-              const FeatureIcon = Icon as typeof Feather;
-              return (
-                <article key={String(title)}>
-                  <span className="mb-5 grid size-11 place-items-center rounded-2xl bg-amber-100 text-amber-700">
-                    <FeatureIcon className="size-5" />
-                  </span>
-                  <h2 className="font-serif text-xl font-bold">{String(title)}</h2>
-                  <p className="mt-2 text-sm leading-6 text-stone-600">{String(copy)}</p>
-                </article>
-              );
-            })}
+            {features.map(({ Icon, title, copy }) => (
+              <article key={title}>
+                <span className="mb-5 grid size-11 place-items-center rounded-2xl bg-amber-100 text-amber-700">
+                  <Icon className="size-5" />
+                </span>
+                <h2 className="font-serif text-xl font-bold">{title}</h2>
+                <p className="mt-2 text-sm leading-6 text-stone-600">{copy}</p>
+              </article>
+            ))}
           </div>
         </section>
       </main>

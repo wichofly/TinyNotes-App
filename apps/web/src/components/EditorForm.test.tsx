@@ -1,6 +1,7 @@
 import type { RichTextNode } from '@tinynotes/shared';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { EditorForm } from './EditorForm';
@@ -116,5 +117,38 @@ describe('EditorForm', () => {
     render(<RouterProvider router={router} />);
 
     expect(screen.getByLabelText('Note title')).toBeDisabled();
+  });
+
+  it('protects a dirty draft while a save request is pending', async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    function PendingSaveHarness() {
+      const [saving, setSaving] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setSaving(true)}>
+            Start saving
+          </button>
+          <EditorForm saving={saving} onSave={vi.fn()} />
+        </>
+      );
+    }
+
+    const router = createMemoryRouter(
+      [
+        { path: '/', element: <PendingSaveHarness /> },
+        { path: '/notes', element: <div>Notes list</div> },
+      ],
+      { initialEntries: ['/'] },
+    );
+    render(<RouterProvider router={router} />);
+
+    await user.type(screen.getByLabelText('Note title'), 'Pending draft');
+    await user.click(screen.getByRole('button', { name: 'Start saving' }));
+    await user.click(screen.getByRole('link', { name: 'Back to notes' }));
+
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    expect(router.state.location.pathname).toBe('/');
   });
 });

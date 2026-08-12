@@ -8,6 +8,7 @@ export const logger = pino({
       'req.headers.cookie',
       'req.headers.authorization',
       'res.headers["set-cookie"]',
+      'err.body',
       '*.password',
       '*.content',
       '*.token',

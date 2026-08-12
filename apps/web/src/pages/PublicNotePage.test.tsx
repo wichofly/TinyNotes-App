@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { emptyRichTextDocument } from '@tinynotes/shared';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, api } from '../lib/api';
 import { PublicNotePage } from './PublicNotePage';
 
@@ -16,6 +17,8 @@ vi.mock('../lib/api', async (importOriginal) => {
 });
 
 describe('PublicNotePage', () => {
+  beforeEach(() => vi.clearAllMocks());
+
   it('uses the same generic not-found state for a revoked link', async () => {
     vi.mocked(api.getPublicNote).mockRejectedValue(
       new ApiError(404, 'NOT_FOUND', 'The requested note was not found.'),
@@ -35,6 +38,28 @@ describe('PublicNotePage', () => {
     expect(
       screen.getByText('This public link is invalid or has been disabled.'),
     ).toBeInTheDocument();
+  });
+
+  it('distinguishes a temporary failure from a revoked link and allows retrying', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.getPublicNote).mockRejectedValue(new TypeError('Failed to fetch'));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/s/abcdefghijklmnopqrstuvwxyzABCDEF']}>
+          <Routes>
+            <Route path="/s/:shareToken" element={<PublicNotePage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'Something went wrong' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/invalid or has been disabled/i)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(api.getPublicNote).toHaveBeenCalledTimes(2);
   });
 
   it('declaratively marks the route as non-indexable', async () => {

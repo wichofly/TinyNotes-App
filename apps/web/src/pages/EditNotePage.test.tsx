@@ -49,7 +49,7 @@ function renderPage() {
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
-  return { router, ...view };
+  return { client, router, ...view };
 }
 
 describe('EditNotePage', () => {
@@ -75,6 +75,7 @@ describe('EditNotePage', () => {
 
     expect(api.enableSharing).toHaveBeenCalledWith(privateNote.id, expect.anything());
     expect(await screen.findByDisplayValue(shareUrl)).toBeInTheDocument();
+    expect(api.getNote).toHaveBeenCalledOnce();
   });
 
   it('reports clipboard failures and leaves the URL selectable', async () => {
@@ -120,6 +121,24 @@ describe('EditNotePage', () => {
     expect(dialog).toBeVisible();
     expect(within(dialog).getByRole('heading', { name: /A private thought/ })).toBeInTheDocument();
     expect(within(dialog).getByText(/cannot be undone/i)).toBeInTheDocument();
+  });
+
+  it('keeps the delete dialog open and reports a failed deletion', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.deleteNote).mockRejectedValue(
+      new Error('The note could not be deleted. Please try again.'),
+    );
+    renderPage();
+
+    const deleteButtons = await screen.findAllByRole('button', { name: 'Delete note' });
+    await user.click(deleteButtons[0]!);
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Delete note' }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'The note could not be deleted. Please try again.',
+    );
+    expect(dialog).toBeVisible();
   });
 
   it('falls back when dialog methods are unavailable', async () => {
