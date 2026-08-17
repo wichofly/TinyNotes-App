@@ -131,6 +131,47 @@ The CI workflow runs formatting, linting, type checking, all three test layers, 
 
 Public-note responses and SPA routes send `X-Robots-Tag: noindex, nofollow, noarchive`. This reduces accidental indexing but does not turn public links into authenticated resources; anyone possessing an enabled link can read its note.
 
+### Netlify web and Vercel API
+
+This repository can deploy the Vite web application to Netlify and the Express API to Vercel.
+The browser continues to use same-origin `/api/*` requests; `netlify.toml` proxies those requests to
+the Vercel API.
+
+Configure Netlify from the repository root with the committed build and redirect settings in
+`netlify.toml`. Do not define `VITE_API_URL` for this topology, because authentication and API
+requests must both use the Netlify origin.
+
+Configure the Vercel project with `apps/api` as its root directory and enable Vercel system
+environment variables. The API entry point uses `VERCEL=1` to export Express without starting a
+persistent listener or acquiring the single-instance PostgreSQL lock. Set these variables for the
+Production environment and redeploy after changing them:
+
+```text
+NODE_ENV=production
+DATABASE_URL=postgresql://<remote-user>:<remote-password>@<remote-host>/<database>?sslmode=require
+BETTER_AUTH_SECRET=<new-high-entropy-secret>
+BETTER_AUTH_URL=https://tinynotesapp.netlify.app
+WEB_ORIGIN=https://tinynotesapp.netlify.app
+PUBLIC_APP_URL=https://tinynotesapp.netlify.app
+LOG_LEVEL=info
+TRUST_PROXY=true
+```
+
+`DATABASE_URL` must identify a remotely reachable PostgreSQL service. A URL containing `localhost`
+or a Docker service name cannot work from Vercel. Keep `DATABASE_URL` and `BETTER_AUTH_SECRET` only
+in Vercel's secret manager; they are not needed by the static Netlify site.
+
+Apply migrations once against the production database before using the deployed API. From a Vercel
+CLI session linked to the API project, the production variables can be supplied without writing
+them to the repository:
+
+```bash
+vercel env run -e production -- npm run db:migrate
+```
+
+After both deployments complete, verify `https://tinynotes-app-api.vercel.app/api/health` and then
+`https://tinynotesapp.netlify.app/api/health`; both should return `{"status":"ok"}`.
+
 ## Design constraints
 
 - Note ownership is checked in every private database query.
