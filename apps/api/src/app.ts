@@ -95,7 +95,7 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.WEB_ORIGIN,
+      origin: [env.WEB_ORIGIN, 'http://localhost:5173', 'http://localhost:5174'],
       credentials: true,
       methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type'],
