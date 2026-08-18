@@ -1,9 +1,8 @@
-import { createApp } from './app.js';
+import app from './app.js';
 import { env } from './config/env.js';
 import { acquireProductionInstanceLock, closeDatabase } from './db/client.js';
 import { logger } from './lib/logger.js';
 
-const app = createApp();
 const isVercelRuntime = process.env.VERCEL === '1';
 
 if (!isVercelRuntime) {

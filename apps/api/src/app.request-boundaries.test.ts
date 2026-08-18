@@ -6,12 +6,20 @@ import { configureTestEnvironment } from './test/test-env.js';
 configureTestEnvironment();
 
 let app: Express;
+let exportedApp: Express;
 let logger: (typeof import('./lib/logger.js'))['logger'];
 
 beforeAll(async () => {
   ({ logger } = await import('./lib/logger.js'));
-  const { createApp } = await import('./app.js');
+  const { createApp, default: defaultApp } = await import('./app.js');
+  exportedApp = defaultApp;
   app = createApp();
+});
+
+describe('Vercel entrypoint', () => {
+  it('exports the Express application as the default module value', () => {
+    expect(typeof exportedApp).toBe('function');
+  });
 });
 
 describe('request body boundaries', () => {
