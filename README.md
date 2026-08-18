@@ -172,7 +172,8 @@ vercel env run -e production -- npm run db:migrate
 ```
 
 After both deployments complete, verify `https://tinynotes-app-api.vercel.app/api/health` and then
-`https://tinynotesapp.netlify.app/api/health`; both should return `{"status":"ok"}`.
+`https://tinynotesapp.netlify.app/api/health`; both should return
+`{"status":"ok","database":"ok"}`.
 
 ## Design constraints
 

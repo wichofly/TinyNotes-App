@@ -45,6 +45,13 @@ async function createNote(agent: TestAgent, title = 'Integration note') {
 }
 
 describe('notes API', () => {
+  it('reports API and database readiness', async () => {
+    const response = await request(app).get('/api/health');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ status: 'ok', database: 'ok' });
+  });
+
   it('requires authentication for private endpoints', async () => {
     const response = await request(app).get('/api/notes');
     expect(response.status).toBe(401);

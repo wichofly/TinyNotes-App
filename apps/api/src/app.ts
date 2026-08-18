@@ -6,6 +6,8 @@ import * as helmetModule from 'helmet';
 import { pinoHttp, type StdSerializedResults } from 'pino-http';
 import { auth } from './auth/auth.js';
 import { env } from './config/env.js';
+import { db } from './db/client.js';
+import { user } from './db/schema/index.js';
 import { logger } from './lib/logger.js';
 import { redactSensitiveRequestUrl } from './lib/request-log-redaction.js';
 import { errorHandler } from './middleware/error-handler.js';
@@ -118,7 +120,15 @@ export function createApp() {
   app.use('/api', apiLimiter);
   app.use(express.json({ limit: '210kb', strict: true }));
   app.get('/', (_req, res) => res.redirect(302, env.PUBLIC_APP_URL));
-  app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+  app.get('/api/health', async (_req, res) => {
+    try {
+      await db.select({ id: user.id }).from(user).limit(1);
+      res.json({ status: 'ok', database: 'ok' });
+    } catch (error) {
+      logger.error({ err: error }, 'Database health check failed');
+      res.status(503).json({ status: 'error', database: 'unavailable' });
+    }
+  });
   app.use('/api/notes', notesRouter);
   app.use('/api/public/notes', publicLimiter, publicNotesRouter);
   app.use('/api', apiNotFound);
