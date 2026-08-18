@@ -2,7 +2,7 @@ import { getRequest, setResponse } from 'better-call/node';
 import cors from 'cors';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
-import helmet from 'helmet';
+import * as helmetModule from 'helmet';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pinoHttp, type StdSerializedResults } from 'pino-http';
@@ -69,7 +69,7 @@ export function createApp() {
 
   if (env.TRUST_PROXY) app.set('trust proxy', 1);
   app.disable('x-powered-by');
-  app.use(helmet());
+  app.use(helmetModule.default());
   app.use(
     cors({
       origin: env.WEB_ORIGIN,
