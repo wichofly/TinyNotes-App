@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "prebuild": "npm run build -w @tinynotes/shared",
     "build": "esbuild src/server.ts src/db/migrate.ts --bundle --platform=node --target=node22 --format=esm --packages=external --alias:@tinynotes/shared=../../packages/shared/src/index.ts --outdir=dist",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
