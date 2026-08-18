@@ -3,8 +3,6 @@ import cors from 'cors';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import * as helmetModule from 'helmet';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { pinoHttp, type StdSerializedResults } from 'pino-http';
 import { auth } from './auth/auth.js';
 import { env } from './config/env.js';
@@ -119,24 +117,11 @@ export function createApp() {
 
   app.use('/api', apiLimiter);
   app.use(express.json({ limit: '210kb', strict: true }));
+  app.get('/', (_req, res) => res.redirect(302, env.PUBLIC_APP_URL));
   app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
   app.use('/api/notes', notesRouter);
   app.use('/api/public/notes', publicLimiter, publicNotesRouter);
   app.use('/api', apiNotFound);
-
-  if (env.NODE_ENV === 'production') {
-    const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
-    const webDist = path.resolve(currentDirectory, '../../web/dist');
-    app.use(express.static(webDist, { index: false }));
-    const sendSpa = (req: express.Request, res: express.Response) => {
-      if (req.path.startsWith('/s/')) {
-        res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
-      }
-      res.sendFile(path.join(webDist, 'index.html'));
-    };
-    app.get('/', sendSpa);
-    app.get('/*splat', sendSpa);
-  }
 
   app.use(errorHandler);
   return app;

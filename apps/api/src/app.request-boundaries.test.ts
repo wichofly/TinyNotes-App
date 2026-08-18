@@ -20,6 +20,13 @@ describe('Vercel entrypoint', () => {
   it('exports the Express application as the default module value', () => {
     expect(typeof exportedApp).toBe('function');
   });
+
+  it('redirects the API root to the public web application', async () => {
+    const response = await request(app).get('/');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('http://127.0.0.1:5173');
+  });
 });
 
 describe('request body boundaries', () => {
