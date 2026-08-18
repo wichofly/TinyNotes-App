@@ -1,7 +1,7 @@
-import { configureTestEnvironment } from './test-env';
+import { configureTestEnvironment } from './test-env.js';
 
 configureTestEnvironment();
 
-const { prepareTestDatabase } = await import('./database');
+const { prepareTestDatabase } = await import('./database.js');
 await prepareTestDatabase();
-await import('../server');
+await import('../server.js');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createNoteSchema, emptyRichTextDocument, richTextDocumentSchema } from './notes';
+import { createNoteSchema, emptyRichTextDocument, richTextDocumentSchema } from './notes.js';
 
 describe('richTextDocumentSchema', () => {
   it('accepts the empty TipTap document', () => {

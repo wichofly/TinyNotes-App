@@ -1,6 +1,6 @@
 import { fromNodeHeaders } from 'better-auth/node';
 import type { NextFunction, Request, Response } from 'express';
-import { auth } from './auth';
+import { auth } from './auth.js';
 
 export async function requireSession(req: Request, res: Response, next: NextFunction) {
   try {

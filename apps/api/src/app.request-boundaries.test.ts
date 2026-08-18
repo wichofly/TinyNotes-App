@@ -1,16 +1,16 @@
 import type { Express } from 'express';
 import request from 'supertest';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { configureTestEnvironment } from './test/test-env';
+import { configureTestEnvironment } from './test/test-env.js';
 
 configureTestEnvironment();
 
 let app: Express;
-let logger: (typeof import('./lib/logger'))['logger'];
+let logger: (typeof import('./lib/logger.js'))['logger'];
 
 beforeAll(async () => {
-  ({ logger } = await import('./lib/logger'));
-  const { createApp } = await import('./app');
+  ({ logger } = await import('./lib/logger.js'));
+  const { createApp } = await import('./app.js');
   app = createApp();
 });
 

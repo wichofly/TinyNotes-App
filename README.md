@@ -142,9 +142,11 @@ Configure Netlify from the repository root with the committed build and redirect
 requests must both use the Netlify origin.
 
 Configure the Vercel project with `apps/api` as its root directory and enable Vercel system
-environment variables. The API entry point uses `VERCEL=1` to export Express without starting a
-persistent listener or acquiring the single-instance PostgreSQL lock. Set these variables for the
-Production environment and redeploy after changing them:
+environment variables. Vercel automatically provides `VERCEL=1`; do not add it to the local
+`.env`, because local development must start a persistent listener. The API entry point uses this
+system variable to export Express without starting a listener or acquiring the single-instance
+PostgreSQL lock. Set these variables for the Production environment and redeploy after changing
+them:
 
 ```text
 NODE_ENV=production

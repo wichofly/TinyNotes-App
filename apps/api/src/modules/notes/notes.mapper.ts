@@ -1,5 +1,5 @@
 import type { NoteListItem, OwnedNote, PublicNote } from '@tinynotes/shared';
-import type { OwnedNoteRow } from './notes.repository';
+import type { OwnedNoteRow } from './notes.repository.js';
 
 export function createShareUrl(token: string | null, publicAppUrl: string) {
   if (!token) return null;

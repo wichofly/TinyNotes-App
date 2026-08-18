@@ -5,8 +5,8 @@ import {
   updateNoteSchema,
 } from '@tinynotes/shared';
 import { Router } from 'express';
-import { requireSession } from '../../auth/middleware';
-import * as service from './notes.service';
+import { requireSession } from '../../auth/middleware.js';
+import * as service from './notes.service.js';
 
 export const notesRouter = Router();
 

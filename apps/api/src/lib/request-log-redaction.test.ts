@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { redactSensitiveRequestUrl } from './request-log-redaction';
+import { redactSensitiveRequestUrl } from './request-log-redaction.js';
 
 describe('redactSensitiveRequestUrl', () => {
   it('redacts public-note API bearer tokens while preserving the query string', () => {

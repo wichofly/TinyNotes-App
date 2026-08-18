@@ -1,9 +1,9 @@
 import type { CreateNoteInput, UpdateNoteInput } from '@tinynotes/shared';
-import { env } from '../../config/env';
-import { createShareToken } from '../../lib/share-token';
-import { AppError } from '../../middleware/app-error';
-import { createShareUrl, toNoteListItem, toOwnedNote, toPublicNote } from './notes.mapper';
-import * as repository from './notes.repository';
+import { env } from '../../config/env.js';
+import { createShareToken } from '../../lib/share-token.js';
+import { AppError } from '../../middleware/app-error.js';
+import { createShareUrl, toNoteListItem, toOwnedNote, toPublicNote } from './notes.mapper.js';
+import * as repository from './notes.repository.js';
 
 function notFound(): never {
   throw new AppError(404, 'NOT_FOUND', 'The requested note was not found.');

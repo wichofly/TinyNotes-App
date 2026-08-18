@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
-import { logger } from '../lib/logger';
-import { redactSensitiveRequestUrl } from '../lib/request-log-redaction';
-import { AppError } from './app-error';
+import { logger } from '../lib/logger.js';
+import { redactSensitiveRequestUrl } from '../lib/request-log-redaction.js';
+import { AppError } from './app-error.js';
 
 const clientBodyErrorTypes = new Set([
   'charset.unsupported',

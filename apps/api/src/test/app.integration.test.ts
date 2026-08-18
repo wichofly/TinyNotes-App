@@ -2,22 +2,22 @@ import { emptyRichTextDocument } from '@tinynotes/shared';
 import type { Express } from 'express';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { configureTestEnvironment } from './test-env';
+import { configureTestEnvironment } from './test-env.js';
 
 configureTestEnvironment();
 
 type TestAgent = ReturnType<typeof request.agent>;
 
 let app: Express;
-let closeDatabase: (typeof import('../db/client'))['closeDatabase'];
-let resetTestDatabase: (typeof import('./database'))['resetTestDatabase'];
+let closeDatabase: (typeof import('../db/client.js'))['closeDatabase'];
+let resetTestDatabase: (typeof import('./database.js'))['resetTestDatabase'];
 
 beforeAll(async () => {
-  const database = await import('./database');
+  const database = await import('./database.js');
   await database.prepareTestDatabase();
   resetTestDatabase = database.resetTestDatabase;
-  ({ closeDatabase } = await import('../db/client'));
-  const { createApp } = await import('../app');
+  ({ closeDatabase } = await import('../db/client.js'));
+  const { createApp } = await import('../app.js');
   app = createApp();
 });
 

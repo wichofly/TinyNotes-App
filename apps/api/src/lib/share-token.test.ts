@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createShareToken } from './share-token';
+import { createShareToken } from './share-token.js';
 
 describe('createShareToken', () => {
   it('creates opaque 24-byte base64url tokens', () => {

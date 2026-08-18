@@ -5,14 +5,14 @@ import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import pinoHttp, { type StdSerializedResults } from 'pino-http';
-import { auth } from './auth/auth';
-import { env } from './config/env';
-import { logger } from './lib/logger';
-import { redactSensitiveRequestUrl } from './lib/request-log-redaction';
-import { errorHandler } from './middleware/error-handler';
-import { apiNotFound } from './middleware/not-found';
-import { notesRouter, publicNotesRouter } from './modules/notes/notes.routes';
+import { pinoHttp, type StdSerializedResults } from 'pino-http';
+import { auth } from './auth/auth.js';
+import { env } from './config/env.js';
+import { logger } from './lib/logger.js';
+import { redactSensitiveRequestUrl } from './lib/request-log-redaction.js';
+import { errorHandler } from './middleware/error-handler.js';
+import { apiNotFound } from './middleware/not-found.js';
+import { notesRouter, publicNotesRouter } from './modules/notes/notes.routes.js';
 
 const rateLimitResponse = {
   error: { code: 'RATE_LIMITED', message: 'Too many requests. Try again later.' },

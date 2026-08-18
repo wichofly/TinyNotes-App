@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg, { type PoolClient } from 'pg';
-import { env } from '../config/env';
-import * as schema from './schema';
+import { env } from '../config/env.js';
+import * as schema from './schema/index.js';
 
 const instanceLockKeys: [number, number] = [1_414_090_329, 1_313_821_765];
 let instanceLockClient: PoolClient | undefined;

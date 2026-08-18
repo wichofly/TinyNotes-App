@@ -1,8 +1,8 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { env } from '../config/env';
-import { db } from '../db/client';
-import * as schema from '../db/schema';
+import { env } from '../config/env.js';
+import { db } from '../db/client.js';
+import * as schema from '../db/schema/index.js';
 
 export const auth = betterAuth({
   appName: 'TinyNotes',

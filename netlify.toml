@@ -2,6 +2,12 @@
   command = "npm run build -w @tinynotes/web"
   publish = "apps/web/dist"
 
+[[headers]]
+  for = "/assets/*"
+
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 [[redirects]]
   from = "/api/*"
   to = "https://tinynotes-app-api.vercel.app/api/:splat"

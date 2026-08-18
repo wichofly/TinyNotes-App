@@ -1,7 +1,7 @@
 import type { CreateNoteInput, RichTextNode, UpdateNoteInput } from '@tinynotes/shared';
 import { and, desc, eq } from 'drizzle-orm';
-import { db } from '../../db/client';
-import { notes, type NoteRow } from '../../db/schema';
+import { db } from '../../db/client.js';
+import { notes, type NoteRow } from '../../db/schema/index.js';
 
 export async function listOwnedNotes(userId: string) {
   return db

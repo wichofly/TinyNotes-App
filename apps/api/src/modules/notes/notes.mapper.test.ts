@@ -1,6 +1,6 @@
-import type { NoteRow } from '../../db/schema';
+import type { NoteRow } from '../../db/schema/index.js';
 import { describe, expect, it } from 'vitest';
-import { toOwnedNote } from './notes.mapper';
+import { toOwnedNote } from './notes.mapper.js';
 
 describe('toOwnedNote', () => {
   it('maps explicit public DTO fields without owner data', () => {
