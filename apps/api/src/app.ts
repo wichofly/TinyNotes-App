@@ -19,6 +19,29 @@ const rateLimitResponse = {
 };
 const authBodyLimitBytes = 32 * 1024;
 
+type HelmetFactory = () => express.RequestHandler;
+
+function isHelmetFactory(value: unknown): value is HelmetFactory {
+  return typeof value === 'function';
+}
+
+function resolveHelmetFactory(moduleValue: unknown): HelmetFactory {
+  if (isHelmetFactory(moduleValue)) return moduleValue;
+
+  if (
+    typeof moduleValue === 'object' &&
+    moduleValue !== null &&
+    'default' in moduleValue &&
+    isHelmetFactory(moduleValue.default)
+  ) {
+    return moduleValue.default;
+  }
+
+  throw new TypeError('Helmet did not provide a callable middleware factory.');
+}
+
+const helmet = resolveHelmetFactory(helmetModule);
+
 async function handleAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
   const contentLength = Number(req.headers['content-length']);
   if (Number.isFinite(contentLength) && contentLength > authBodyLimitBytes) {
@@ -69,7 +92,7 @@ export function createApp() {
 
   if (env.TRUST_PROXY) app.set('trust proxy', 1);
   app.disable('x-powered-by');
-  app.use(helmetModule.default());
+  app.use(helmet());
   app.use(
     cors({
       origin: env.WEB_ORIGIN,
